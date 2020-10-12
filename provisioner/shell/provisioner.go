@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hako/durafmt"
 	"github.com/hashicorp/hcl/v2/hcldec"
 	"github.com/hashicorp/packer/common"
 	"github.com/hashicorp/packer/common/retry"
@@ -295,6 +296,8 @@ func (p *Provisioner) Provision(ctx context.Context, ui packer.Ui, comm packer.C
 			return fmt.Errorf("Error processing command: %s", err)
 		}
 
+		executionStartTime := time.Now()
+
 		// Upload the file and run the command. Do this in the context of
 		// a single retryable function so that we don't end up with
 		// the case that the upload succeeded, a restart is initiated,
@@ -346,6 +349,11 @@ func (p *Provisioner) Provision(ctx context.Context, ui packer.Ui, comm packer.C
 		} else if err := p.config.ValidExitCode(cmd.ExitStatus()); err != nil {
 			return err
 		}
+
+		executionEndTime := time.Now()
+		executionDuration := executionEndTime.Sub(executionStartTime)
+		fmtExecutionDuration := durafmt.Parse(executionDuration).LimitFirstN(2)
+		ui.Say(fmt.Sprintf("Running '%s' took %s", path, fmtExecutionDuration))
 
 		if p.config.SkipClean {
 			continue
