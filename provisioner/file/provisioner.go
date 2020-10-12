@@ -11,7 +11,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/hako/durafmt"
 	"github.com/hashicorp/hcl/v2/hcldec"
 	"github.com/hashicorp/packer/common"
 	"github.com/hashicorp/packer/helper/config"
@@ -143,6 +145,9 @@ func (p *Provisioner) ProvisionDownload(ui packer.Ui, comm packer.Communicator) 
 		}
 
 		ui.Say(fmt.Sprintf("Downloading %s => %s", src, dst))
+
+		executionStartTime := time.Now()
+
 		// ensure destination dir exists.  p.config.Destination may either be a file or a dir.
 		dir := dst
 		// if it doesn't end with a /, set dir as the parent dir
@@ -176,6 +181,11 @@ func (p *Provisioner) ProvisionDownload(ui packer.Ui, comm packer.Communicator) 
 			ui.Error(fmt.Sprintf("Download failed: %s", err))
 			return err
 		}
+
+		executionEndTime := time.Now()
+		executionDuration := executionEndTime.Sub(executionStartTime)
+		fmtExecutionDuration := durafmt.Parse(executionDuration).LimitFirstN(2)
+		ui.Say(fmt.Sprintf("Running '%s' took %s", path, fmtExecutionDuration))
 	}
 	return nil
 }
@@ -192,6 +202,8 @@ func (p *Provisioner) ProvisionUpload(ui packer.Ui, comm packer.Communicator) er
 		}
 
 		ui.Say(fmt.Sprintf("Uploading %s => %s", src, dst))
+
+		executionStartTime := time.Now()
 
 		info, err := os.Stat(src)
 		if err != nil {
@@ -237,6 +249,11 @@ func (p *Provisioner) ProvisionUpload(ui packer.Ui, comm packer.Communicator) er
 			ui.Error(fmt.Sprintf("Upload failed: %s", err))
 			return err
 		}
+
+		executionEndTime := time.Now()
+		executionDuration := executionEndTime.Sub(executionStartTime)
+		fmtExecutionDuration := durafmt.Parse(executionDuration).LimitFirstN(2)
+		ui.Say(fmt.Sprintf("Running '%s' took %s", path, fmtExecutionDuration))
 	}
 	return nil
 }
